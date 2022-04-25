@@ -1,5 +1,7 @@
+
 import React from 'react'
-import { BsFillBasketFill } from 'react-icons/bs'
+import { BsFillBasketFill,  } from 'react-icons/bs'
+import {MdAdd, MdLogout} from 'react-icons/md'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 
@@ -7,7 +9,32 @@ import { Link } from 'react-router-dom'
 import Logo from '../img/logo.png'
 import Avatar from '../img/avatar.png'
 
+// Authentication form with google
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { app } from '../firebase.config'
+import { useStateValue } from '../context/StateProvider'
+import { actionType } from '../context/reducer'
+
 export const Header = () => {
+
+    const firebaseAuth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+// Nuestro propio hook
+ const [{user}, dispatch] = useStateValue()
+
+  const login = async () =>{
+    if (!user){
+       const {user: {refreshToken, providerData }} = await signInWithPopup(firebaseAuth, provider);
+      dispatch({
+        type: actionType.SET_USER,
+        user: providerData[0],
+      })
+      localStorage.setItem('user', JSON.stringify(providerData[0]));
+
+    }
+  }
+
   return (
     <header className='fixed z-50 w-screen p-6 px-16 '>
       {/* Desktop & tablet */}
@@ -34,16 +61,31 @@ export const Header = () => {
                 className=' text-textcolor  text-2xl  cursor-pointer'/>
                 <div className=" absolute -top-3 -right-4 w-5 h-5 rounded-full bg-cartNumBg
                 flex items-center justify-center">
-                  <p className=' text-sm text-white font-bold'>4</p>
+                  <p className=' text-sm text-white font-bold'>2</p>
                 </div>
             </div>
 
               {/* Integration of auth */}
             <div className='relative '>
-              <motion.img whileTap={{scale:2}}
-              src={Avatar}
-              className="w-11 min-w-[40px] h-11 min-h-[40px] drop-shadow-lg cursor-pointer"
-              alt="user-profile" />
+              <motion.img
+              whileTap={{scale:2}}
+              src={user ? user.photoURL : Avatar}
+              className="w-11 min-w-[40px] h-11 min-h-[40px] drop-shadow-lg cursor-pointer rounded-full"
+              alt="userprofile"
+              onClick={login}
+              />
+
+              <div className='w-40 bg-gray-50 flex flex-col shadow-xl rounded-lg absolute top-12 right-2  py-2'>
+                {user && user.email === "alv.diego19@gmail.com" && (
+                <Link to={'/createItem'}>
+
+                  <p className='cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-slate-200 transition-all duration-100 ease-out text-textColor text-base '>
+                    New Item<MdAdd/>
+                  </p>
+                </Link>
+                )}
+                <p className='cursor-pointer px-4 py-3 flex items-center gap-3 hover:bg-red-400 transition-all duration-100 ease-out text-textColor text-base'>Logout <MdLogout/></p>
+              </div>
             </div>
           </div>
       </div>
